@@ -388,6 +388,12 @@ impl Client {
                 }
             }
             Ok(x) => {
+                // SamTech: technician authorization signs against this key (see src/samtech.rs).
+                interface.get_lch().write().unwrap().samtech_peer_pk = if x.0 .0.is_secured() {
+                    x.0 .2.clone().unwrap_or_default()
+                } else {
+                    Vec::new()
+                };
                 // Set x.2 to true only in the connect() function to indicate that direct_failures needs to be updated; everywhere else it should be set to false.
                 if x.2 {
                     let direct_failures = interface.get_lch().read().unwrap().direct_failures;
@@ -2850,6 +2856,8 @@ struct ConnToken {
 /// Login config handler for [`Client`].
 #[derive(Default)]
 pub struct LoginConfigHandler {
+    /// SamTech: verified key of the controlled device, set only on a secured channel.
+    pub samtech_peer_pk: Vec<u8>,
     id: String,
     pub conn_type: ConnType,
     pub is_terminal_admin: bool,
@@ -3881,6 +3889,12 @@ impl LoginConfigHandler {
             os_login,
             hwid,
             avatar,
+            samtech_auth: crate::samtech::sign_auth(
+                &self.samtech_peer_pk,
+                &self.hash.samtech_nonce,
+                &self.hash.challenge,
+            )
+            .into(),
             ..Default::default()
         };
         match self.conn_type {

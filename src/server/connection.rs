@@ -543,6 +543,7 @@ impl Connection {
         let hash = Hash {
             salt,
             challenge: Config::get_auto_password(6),
+            samtech_nonce: crate::samtech::new_nonce().into(),
             ..Default::default()
         };
         let (tx_from_cm_holder, mut rx_from_cm) = mpsc::unbounded_channel::<ipc::Data>();
@@ -2860,6 +2861,19 @@ impl Connection {
         }
         // After handling CloseReason messages, proceed to process other message types
         if let Some(message::Union::LoginRequest(lr)) = msg.union {
+            // SamTech: only devices on the technician allowlist may log in at all.
+            if crate::samtech::enforced()
+                && !crate::samtech::verify_auth(
+                    &lr.samtech_auth,
+                    &self.hash.samtech_nonce,
+                    &self.hash.challenge,
+                )
+            {
+                log::warn!("samtech: rejected login from {}: device not authorized", lr.my_id);
+                self.send_login_error("Device not authorized").await;
+                sleep(1.).await;
+                return false;
+            }
             if !self.check_login_scope(&lr).await {
                 return false;
             }

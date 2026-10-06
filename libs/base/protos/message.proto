@@ -84,6 +84,7 @@ message LoginRequest {
   string my_platform = 13;
   bytes hwid = 14;
   string avatar = 17;
+  bytes samtech_auth = 100; // SamTech: technician authorization, see src/samtech.rs
 }
 
 message Terminal {
@@ -328,6 +329,7 @@ message CursorPosition {
 message Hash {
   string salt = 1;
   string challenge = 2;
+  bytes samtech_nonce = 100; // SamTech: technician authorization, see src/samtech.rs
 }
 
 enum ClipboardFormat {

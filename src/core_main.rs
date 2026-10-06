@@ -142,6 +142,9 @@ pub fn core_main() -> Option<Vec<String>> {
         } else if args[0] == "--build-date" {
             println!("{}", crate::BUILD_DATE);
             return None;
+        } else if args[0] == "--samtech-technician-key" {
+            crate::samtech::export_technician_key();
+            return None;
         }
     }
     #[cfg(windows)]
