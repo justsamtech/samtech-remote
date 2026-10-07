@@ -1185,6 +1185,9 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
             }).marginOnly(left: _kContentHMargin),
         Column(
           children: [
+            // SamTech: the device owner can withdraw unattended support at any time.
+            _OptionCheckBox(context, 'Allow SamTech support to connect without asking each time', 'allow-samtech-unattended',
+                enabled: enabled),
             _OptionCheckBox(
                 context, 'Enable keyboard/mouse', kOptionEnableKeyboard,
                 enabled: enabled, fakeValue: fakeValue),

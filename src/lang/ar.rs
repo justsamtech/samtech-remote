@@ -158,6 +158,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Create desktop icon", "انشاء اختصار سطح المكتب"),
         ("agreement_tip", "بمجرد البدء بالتثبيت, فانت قد قبلت اتفاقية الترخيص."),
         ("Accept and Install", "الموافقة والتثبيت"),
+        ("Allow SamTech support to connect without asking each time", "السماح لدعم SamTech بالاتصال دون طلب الموافقة في كل مرة"),
         ("End-user license agreement", "اتفاقية ترخيص المستخدم النهائي"),
         ("Generating ...", "جاري الانشاء..."),
         ("Your installation is lower version.", "انت تحاول تثبيت نسخة قديمة."),

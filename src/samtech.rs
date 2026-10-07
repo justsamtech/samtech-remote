@@ -48,11 +48,14 @@ fn allowed_keys() -> Vec<Vec<u8>> {
 /// True when the signed config lets a verified technician device in without a password or an
 /// accept click (`technician-unattended = "Y"`).
 pub fn unattended_allowed() -> bool {
-    HARD_SETTINGS
+    // Two switches: the signed build-wide one, and the device owner's own consent, given at
+    // install and revocable in Settings > Security.
+    let build_wide = HARD_SETTINGS
         .read()
         .unwrap()
         .get("technician-unattended")
-        .map_or(false, |v| v == "Y")
+        .map_or(false, |v| v == "Y");
+    build_wide && Config::get_option("allow-samtech-unattended") == "Y"
 }
 
 pub fn new_nonce() -> Vec<u8> {
