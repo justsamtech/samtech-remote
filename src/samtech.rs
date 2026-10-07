@@ -71,6 +71,8 @@ pub fn sign_auth(controlled_pk: &[u8], nonce: &[u8], challenge: &str) -> Vec<u8>
     if pk.len() != sign::PUBLICKEYBYTES {
         return Vec::new();
     }
+    // Public key only: lets the owner see which device key a session actually presents.
+    log::info!("samtech: presenting technician key {}", crate::encode64(&pk));
     let mut out = pk;
     out.extend_from_slice(&sign::sign(&transcript(controlled_pk, nonce, challenge), &sk));
     out
@@ -79,20 +81,32 @@ pub fn sign_auth(controlled_pk: &[u8], nonce: &[u8], challenge: &str) -> Vec<u8>
 /// Controlled side. `nonce` and `challenge` are the ones this connection sent in its `Hash`.
 pub fn verify_auth(auth: &[u8], nonce: &[u8], challenge: &str) -> bool {
     if auth.len() <= sign::PUBLICKEYBYTES || nonce.len() != NONCE_LEN {
+        log::warn!("samtech: login carries no technician proof ({} bytes)", auth.len());
         return false;
     }
     let (their_pk, signed) = auth.split_at(sign::PUBLICKEYBYTES);
     if !allowed_keys().iter().any(|k| k.as_slice() == their_pk) {
+        log::warn!(
+            "samtech: technician key {} is not on the allowlist",
+            crate::encode64(their_pk)
+        );
         return false;
     }
     let Some(their_pk) = sign::PublicKey::from_slice(their_pk) else {
         return false;
     };
     let Ok(msg) = sign::verify(signed, &their_pk) else {
+        log::warn!("samtech: technician proof has a bad signature");
         return false;
     };
     let (_, my_pk) = Config::get_key_pair();
-    msg == transcript(&my_pk, nonce, challenge)
+    let ok = msg == transcript(&my_pk, nonce, challenge);
+    if !ok {
+        // The controller signed for a different device key or session: stale proof, or the
+        // rendezvous server presented another key for this device.
+        log::warn!("samtech: technician proof is not for this device and session");
+    }
+    ok
 }
 
 /// `--samtech-technician-key`: print this device's public key and save it next to the user's
