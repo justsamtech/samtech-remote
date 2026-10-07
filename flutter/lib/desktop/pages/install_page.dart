@@ -66,8 +66,6 @@ class _InstallPageBodyState extends State<_InstallPageBody>
   final RxBool startmenu = true.obs;
   final RxBool desktopicon = true.obs;
   final RxBool printer = false.obs;
-  // SamTech: consent for unattended support, stored as a device option before installing.
-  final RxBool unattended = true.obs;
   final RxBool showProgress = false.obs;
   final RxBool btnEnabled = true.obs;
 
@@ -167,7 +165,8 @@ class _InstallPageBodyState extends State<_InstallPageBody>
                   .marginOnly(bottom: 7),
               Option(desktopicon, label: 'Create desktop icon')
                   .marginOnly(bottom: 7),
-              Option(unattended, label: 'Allow SamTech support to connect without asking each time'),
+              // SamTech: installing is the consent; say so plainly instead of offering a choice.
+              Text(translate('Installing this program lets SamTech support connect to this computer without asking each time. To stop this, uninstall the program.')),
               Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -253,11 +252,9 @@ class _InstallPageBodyState extends State<_InstallPageBody>
   }
 
   void install() {
-    do_install() async {
+    do_install() {
       btnEnabled.value = false;
       showProgress.value = true;
-      await bind.mainSetOption(
-          key: 'allow-samtech-unattended', value: unattended.value ? 'Y' : 'N');
       String args = '';
       if (startmenu.value) args += ' startmenu';
       if (desktopicon.value) args += ' desktopicon';
