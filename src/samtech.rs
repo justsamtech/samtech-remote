@@ -45,6 +45,18 @@ fn allowed_keys() -> Vec<Vec<u8>> {
         .collect()
 }
 
+/// Diagnostics build only: with SAMTECH_TRACE set, print a marker to stderr (unbuffered, so it
+/// survives an abort that would lose buffered log lines).
+pub fn trace(msg: &str) {
+    if std::env::var_os("SAMTECH_TRACE").is_some() {
+        eprintln!("[samtech-trace] {}", msg);
+    }
+}
+
+pub fn cfg_mode() -> String {
+    std::env::var("SAMTECH_CFG_MODE").unwrap_or_default()
+}
+
 pub fn new_nonce() -> Vec<u8> {
     randombytes(NONCE_LEN)
 }

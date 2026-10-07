@@ -669,6 +669,7 @@ pub async fn start_server(is_server: bool, no_server: bool) {
         base::platform::windows::start_cpu_performance_monitor();
     });
 
+    crate::samtech::trace(&format!("start_server: is_server={}", is_server));
     if is_server {
         crate::common::set_server_running(true);
         std::thread::spawn(move || {
@@ -700,7 +701,9 @@ pub async fn start_server(is_server: bool, no_server: bool) {
             // cold probe, which is what happened before the warm existed.
             log::warn!("drm: could not spawn the availability warm ({err}); skipping it");
         }
+        crate::samtech::trace("start_server: before fix_key_down_timeout_loop");
         input_service::fix_key_down_timeout_loop();
+        crate::samtech::trace("start_server: after fix_key_down_timeout_loop");
         #[cfg(target_os = "linux")]
         if input_service::wayland_use_uinput() {
             allow_err!(input_service::setup_uinput(0, 1920, 0, 1080).await);
@@ -709,8 +712,10 @@ pub async fn start_server(is_server: bool, no_server: bool) {
         wait_initial_config_sync().await;
         #[cfg(target_os = "windows")]
         crate::platform::try_kill_broker();
+        crate::samtech::trace("start_server: after try_kill_broker");
         #[cfg(feature = "hwcodec")]
         scrap::hwcodec::start_check_process();
+        crate::samtech::trace("start_server: after hwcodec check start");
         crate::RendezvousMediator::start_all().await;
     } else {
         match crate::ipc::connect(1000, "").await {

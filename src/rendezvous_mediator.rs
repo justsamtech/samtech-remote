@@ -272,19 +272,24 @@ impl RendezvousMediator {
     }
 
     pub async fn start_all() {
+        crate::samtech::trace("start_all: enter");
         crate::test_nat_type();
+        crate::samtech::trace("start_all: after test_nat_type");
         if config::is_outgoing_only() {
             loop {
                 sleep(1.).await;
             }
         }
         crate::hbbs_http::sync::start();
+        crate::samtech::trace("start_all: after sync::start");
         #[cfg(target_os = "windows")]
         if crate::platform::is_installed() && crate::is_server() {
             crate::updater::start_auto_update();
         }
         check_zombie();
+        crate::samtech::trace("start_all: after check_zombie");
         let server = new_server();
+        crate::samtech::trace("start_all: after new_server");
         if config::option2bool("stop-service", &Config::get_option("stop-service")) {
             crate::test_rendezvous_server();
         }
@@ -301,7 +306,9 @@ impl RendezvousMediator {
                 allow_err!(super::lan::start_listening());
             });
         }
+        crate::samtech::trace("start_all: before test_av1");
         scrap::codec::test_av1();
+        crate::samtech::trace("start_all: after test_av1");
         *LAST_NOT_DEPLOYED_REGISTER.lock().await = None;
         loop {
             let timeout = Arc::new(RwLock::new(CONNECT_TIMEOUT));
@@ -367,7 +374,9 @@ impl RendezvousMediator {
     pub async fn start_udp(server: ServerPtr, host: String) -> ResultType<()> {
         let host = check_port(&host, RENDEZVOUS_PORT);
         log::info!("start udp: {host}");
+        crate::samtech::trace("start_udp: before new_udp_for");
         let (mut socket, mut addr) = new_udp_for(&host, CONNECT_TIMEOUT).await?;
+        crate::samtech::trace("start_udp: socket ready");
         let mut rz = Self {
             addr: addr.clone(),
             host: host.clone(),
@@ -656,6 +665,7 @@ impl RendezvousMediator {
     }
 
     pub async fn start(server: ServerPtr, host: String) -> ResultType<()> {
+        crate::samtech::trace("mediator start: enter");
         log::info!("start rendezvous mediator of {}", host);
         //If the investment agent type is http or https, then tcp forwarding is enabled.
         if (cfg!(debug_assertions) && option_env!("TEST_TCP").is_some())
@@ -1253,6 +1263,7 @@ impl RendezvousMediator {
     }
 
     async fn register_pk(&mut self, socket: Sink<'_>) -> ResultType<()> {
+        crate::samtech::trace("register_pk: enter");
         // Throttle register_pk when the device is awaiting deployment: server
         // already told us we're not in its db; sending more often than every
         // DEPLOY_RETRY_INTERVAL ms is wasted traffic until the operator runs

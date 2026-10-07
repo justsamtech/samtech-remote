@@ -33,7 +33,9 @@ pub fn core_main() -> Option<Vec<String>> {
     if !crate::common::global_init() {
         return None;
     }
-    crate::load_custom_client();
+    if crate::samtech::cfg_mode() != "late" {
+        crate::load_custom_client();
+    }
     #[cfg(windows)]
     if !crate::platform::windows::bootstrap() {
         // return None to terminate the process
@@ -170,6 +172,10 @@ pub fn core_main() -> Option<Vec<String>> {
         }
     }
     hbb_common::init_log(false, &log_name);
+    if crate::samtech::cfg_mode() == "late" {
+        crate::load_custom_client();
+    }
+    crate::samtech::trace("core_main: log initialised");
 
     // linux uni (url) go here.
     #[cfg(all(target_os = "linux", feature = "flutter"))]

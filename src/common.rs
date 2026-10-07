@@ -660,7 +660,9 @@ impl Drop for CheckTestNatType {
 }
 
 pub fn test_nat_type() {
+    crate::samtech::trace("test_nat_type: before test_ipv6_sync");
     test_ipv6_sync();
+    crate::samtech::trace("test_nat_type: after test_ipv6_sync");
     use std::sync::atomic::{AtomicBool, Ordering};
     std::thread::spawn(move || {
         static IS_RUNNING: AtomicBool = AtomicBool::new(false);
@@ -680,6 +682,7 @@ pub fn test_nat_type() {
 
         let mut i = 0;
         loop {
+            crate::samtech::trace("test_nat_type thread: calling test_nat_type_");
             match test_nat_type_() {
                 Ok(true) => break,
                 Err(err) => {
@@ -2358,6 +2361,15 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
 }
 
 pub fn load_custom_client() {
+    let mode = crate::samtech::cfg_mode();
+    crate::samtech::trace(&format!("load_custom_client mode='{}'", mode));
+    if mode == "skip" {
+        return;
+    }
+    if mode == "init" {
+        let r = hbb_common::sodiumoxide::init();
+        crate::samtech::trace(&format!("sodiumoxide::init -> {:?}", r));
+    }
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());
@@ -2466,7 +2478,15 @@ pub fn read_custom_client(config: &str) {
         log::error!("Failed to parse public key of custom client");
         return;
     };
-    let Ok(data) = sign::verify(&data, &pk) else {
+    crate::samtech::trace("read_custom_client: before verify");
+    let verified = if crate::samtech::cfg_mode() == "noverify" {
+        // diagnostics only: take the payload without calling into libsodium
+        data.get(64..).map(|d| d.to_vec()).ok_or(())
+    } else {
+        sign::verify(&data, &pk)
+    };
+    crate::samtech::trace(&format!("read_custom_client: verify ok={}", verified.is_ok()));
+    let Ok(data) = verified else {
         log::error!("Failed to dec custom client config");
         return;
     };
