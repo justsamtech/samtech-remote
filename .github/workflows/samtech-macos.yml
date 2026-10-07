@@ -234,7 +234,7 @@ jobs:
         shell: bash
         run: |
           APP=./flutter/build/macos/Build/Products/Release/RustDesk.app
-          cp ./samtech/custom.txt "$APP/Contents/Resources/custom.txt"
+          cp ./samtech/custom-technician.txt "$APP/Contents/Resources/custom.txt"
           # the bundle changed after Xcode sealed it: re-seal ad hoc so Apple silicon will run it
           codesign --force --deep --sign - "$APP"
           codesign --verify --deep --strict "$APP"

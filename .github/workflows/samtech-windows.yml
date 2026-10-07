@@ -324,7 +324,7 @@ jobs:
       - name: SamTech built-in config
         shell: bash
         run: |
-          cp ./samtech/custom.txt ./rustdesk/custom.txt
+          cp ./samtech/custom-technician.txt ./rustdesk/custom.txt
           # Upstream ships a prebuilt, closed printer adapter that reads custom.txt itself and
           # exits the process (code 3) unless the file is signed with upstream's key.
           # SamTech does not ship it: no remote printing, and no unaudited binary in the package.
@@ -358,10 +358,18 @@ jobs:
           pip3 install -r requirements.txt
           rm -rf ../../rustdesk-pkg && cp -r ../../rustdesk ../../rustdesk-pkg
           mv ../../rustdesk-pkg/rustdesk.exe ../../rustdesk-pkg/SamTechRemote.exe
+          cp ../../samtech/custom-customer.txt ../../rustdesk-pkg/custom.txt
           python3 ./generate.py -f ../../rustdesk-pkg/ -o . -e ../../rustdesk-pkg/SamTechRemote.exe
+          mkdir -p ../../SignOutput
+          mv ../../target/release/rustdesk-portable-packer.exe ../../SignOutput/SamTechRemote-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
+          rm -rf ../../rustdesk-pkg && cp -r ../../rustdesk ../../rustdesk-pkg
+          mv ../../rustdesk-pkg/rustdesk.exe ../../rustdesk-pkg/SamTechRemote.exe
+          cp ../../samtech/custom-technician.txt ../../rustdesk-pkg/custom.txt
+          python3 ./generate.py -f ../../rustdesk-pkg/ -o . -e ../../rustdesk-pkg/SamTechRemote.exe
+          mkdir -p ../../SignOutput
+          mv ../../target/release/rustdesk-portable-packer.exe ../../SignOutput/SamTechRemote-Technician-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
           popd
           mkdir -p ./SignOutput
-          mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/SamTechRemote-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
