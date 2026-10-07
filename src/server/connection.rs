@@ -2862,13 +2862,12 @@ impl Connection {
         // After handling CloseReason messages, proceed to process other message types
         if let Some(message::Union::LoginRequest(lr)) = msg.union {
             // SamTech: only devices on the technician allowlist may log in at all.
-            if crate::samtech::enforced()
-                && !crate::samtech::verify_auth(
-                    &lr.samtech_auth,
-                    &self.hash.samtech_nonce,
-                    &self.hash.challenge,
-                )
-            {
+            let samtech_verified = crate::samtech::verify_auth(
+                &lr.samtech_auth,
+                &self.hash.samtech_nonce,
+                &self.hash.challenge,
+            );
+            if crate::samtech::enforced() && !samtech_verified {
                 log::warn!("samtech: rejected login from {}: device not authorized", lr.my_id);
                 self.send_login_error("Device not authorized").await;
                 sleep(1.).await;
@@ -3005,7 +3004,16 @@ impl Connection {
                 crate::get_builtin_option(keys::OPTION_ALLOW_LOGON_SCREEN_PASSWORD) == "Y"
                     && is_logon();
 
-            if (password::approve_mode() == ApproveMode::Click && !allow_logon_screen_password)
+            if samtech_verified && crate::samtech::unattended_allowed() {
+                // SamTech: a verified technician device is the authorization; no password and
+                // no accept click, when the signed config grants unattended access.
+                log::info!("samtech: unattended session authorized for {}", lr.my_id);
+                if !self.send_logon_response_and_keep_alive().await {
+                    return false;
+                }
+                self.try_start_cm(lr.my_id.clone(), lr.my_name.clone(), self.authorized);
+            } else if (password::approve_mode() == ApproveMode::Click
+                && !allow_logon_screen_password)
                 || password::approve_mode() == ApproveMode::Both && !password::has_valid_password()
             {
                 #[cfg(not(any(target_os = "android", target_os = "ios")))]

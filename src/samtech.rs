@@ -45,6 +45,16 @@ fn allowed_keys() -> Vec<Vec<u8>> {
         .collect()
 }
 
+/// True when the signed config lets a verified technician device in without a password or an
+/// accept click (`technician-unattended = "Y"`).
+pub fn unattended_allowed() -> bool {
+    HARD_SETTINGS
+        .read()
+        .unwrap()
+        .get("technician-unattended")
+        .map_or(false, |v| v == "Y")
+}
+
 pub fn new_nonce() -> Vec<u8> {
     randombytes(NONCE_LEN)
 }
@@ -80,6 +90,9 @@ pub fn sign_auth(controlled_pk: &[u8], nonce: &[u8], challenge: &str) -> Vec<u8>
 
 /// Controlled side. `nonce` and `challenge` are the ones this connection sent in its `Hash`.
 pub fn verify_auth(auth: &[u8], nonce: &[u8], challenge: &str) -> bool {
+    if !enforced() {
+        return false;
+    }
     if auth.len() <= sign::PUBLICKEYBYTES || nonce.len() != NONCE_LEN {
         log::warn!("samtech: login carries no technician proof ({} bytes)", auth.len());
         return false;
