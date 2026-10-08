@@ -119,8 +119,9 @@ jobs:
       - name: SamTech icon
         shell: bash
         run: |
-          cp ./samtech/branding/icon.ico ./res/icon.ico
-          cp ./samtech/branding/icon.ico ./flutter/windows/runner/resources/app_icon.ico
+          cp ./samtech/branding/icons/SamtechRemote.ico ./res/icon.ico
+          cp ./samtech/branding/icons/SamtechRemote.ico ./res/tray-icon.ico
+          cp ./samtech/branding/icons/SamtechRemote.ico ./flutter/windows/runner/resources/app_icon.ico
 
       - name: Restore bridge files
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -329,7 +330,8 @@ jobs:
           # exits the process (code 3) unless the file is signed with upstream's key.
           # SamTech does not ship it: no remote printing, and no unaudited binary in the package.
           # SamTech icon for shortcuts and inside the app (upstream's custom-client asset slots)
-          cp ./samtech/branding/icon.ico ./samtech/branding/icon.png ./rustdesk/data/flutter_assets/assets/
+          cp ./samtech/branding/icons/SamtechRemote.ico ./rustdesk/data/flutter_assets/assets/icon.ico
+          cp ./samtech/branding/icons/SamtechRemote_512.png ./rustdesk/data/flutter_assets/assets/icon.png
           rm -f ./rustdesk/printer_driver_adapter.dll
           rm -rf ./rustdesk/drivers/RustDeskPrinterDriver
           rmdir ./rustdesk/drivers 2>/dev/null || true
