@@ -10,6 +10,10 @@ on:
       upload-tag:
         type: string
         default: "samtech-dev"
+      sign:
+        description: Sign the installers with the SamTech certificate (SSL.com eSigner; uses signing quota)
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -450,6 +454,41 @@ jobs:
         shell: bash
         run: |
           BASE_URL=${{ env.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput
+
+      - name: SamTech code signing (Customer)
+        if: env.UPLOAD_ARTIFACT == 'true' && inputs.sign && matrix.job.arch == 'x86_64'
+        uses: sslcom/esigner-codesign@cf5f6c1d38ad10f47e3ed9aca873f429b1a8d85b # v1.3.2
+        with:
+          command: sign
+          username: ${{ secrets.ES_USERNAME }}
+          password: ${{ secrets.ES_PASSWORD }}
+          credential_id: ${{ secrets.CREDENTIAL_ID }}
+          totp_secret: ${{ secrets.ES_TOTP_SECRET }}
+          file_path: ${{ github.workspace }}/SignOutput/SamTechRemote-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
+          output_path: ${{ github.workspace }}/SignOutput-signed
+          malware_block: true
+          clean_logs: true
+
+      - name: SamTech code signing (Technician)
+        if: env.UPLOAD_ARTIFACT == 'true' && inputs.sign && matrix.job.arch == 'x86_64'
+        uses: sslcom/esigner-codesign@cf5f6c1d38ad10f47e3ed9aca873f429b1a8d85b # v1.3.2
+        with:
+          command: sign
+          username: ${{ secrets.ES_USERNAME }}
+          password: ${{ secrets.ES_PASSWORD }}
+          credential_id: ${{ secrets.CREDENTIAL_ID }}
+          totp_secret: ${{ secrets.ES_TOTP_SECRET }}
+          file_path: ${{ github.workspace }}/SignOutput/SamTechRemote-Technician-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
+          output_path: ${{ github.workspace }}/SignOutput-signed
+          malware_block: true
+          clean_logs: true
+
+      - name: SamTech use signed installers
+        if: env.UPLOAD_ARTIFACT == 'true' && inputs.sign && matrix.job.arch == 'x86_64'
+        shell: pwsh
+        run: |
+          Copy-Item -Force ./SignOutput-signed/*.exe ./SignOutput/
+          Get-ChildItem ./SignOutput/*.exe | ForEach-Object { $s = Get-AuthenticodeSignature $_.FullName; "$($_.Name): $($s.Status) $($s.SignerCertificate.Subject)"; if ($s.Status -ne 'Valid') { exit 1 } }
 
       - name: Publish Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
