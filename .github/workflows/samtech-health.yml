@@ -1,0 +1,32 @@
+# SamTech: external health check of the rendezvous/relay host.
+# Runs every 15 minutes from GitHub's network. If a port does not answer the run fails, and GitHub
+# e-mails the account that owns this schedule. Public repository, so these runs use no paid minutes.
+# Note: GitHub pauses scheduled workflows after 60 days without repository activity.
+name: SamTech server health
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Rendezvous and relay ports answer
+        run: |
+          host=remote.samtechapi.com
+          fail=0
+          for port in 21115 21116 21117; do
+            ok=0
+            for attempt in 1 2 3; do
+              if timeout 5 bash -c "</dev/tcp/$host/$port" 2>/dev/null; then ok=1; break; fi
+              sleep 5
+            done
+            if [ $ok = 1 ]; then echo "tcp/$port ok"; else echo "::error::$host tcp/$port does not answer"; fail=1; fi
+          done
+          exit $fail
