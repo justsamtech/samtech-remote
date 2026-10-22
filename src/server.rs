@@ -671,6 +671,8 @@ pub async fn start_server(is_server: bool, no_server: bool) {
 
     if is_server {
         crate::common::set_server_running(true);
+        // SamTech: load the cached technician list and keep it fresh before any login arrives.
+        crate::samtech::start_list_refresh();
         std::thread::spawn(move || {
             if let Err(err) = crate::ipc::start("") {
                 log::error!("Failed to start ipc: {}", err);
